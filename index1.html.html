@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Budget Tracker — OnCredit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0faf6;--bg2:#e4f5ee;--surface:#fff;--surface2:#f5fbf8;
+  --border:#c8e8da;--border2:#a8d8c4;
+  --text:#0f2d22;--text2:#2d6b52;--muted:#6b9e88;--muted2:#9dbfb2;
+  --accent:#0d9e6e;--accent2:#0bc18a;--accent-dim:rgba(13,158,110,0.1);--accent-light:#d0f5e8;
+  --teal:#0891b2;--teal-dim:rgba(8,145,178,0.1);--teal-light:#cff3fc;
+  --danger:#e53e3e;--danger-dim:rgba(229,62,62,0.08);--danger-light:#fde8e8;
+  --warn:#d97706;--warn-dim:rgba(217,119,6,0.08);--warn-light:#fef3c7;
+  --success:#059669;--success-dim:rgba(5,150,105,0.1);
+  --purple:#7c3aed;--purple-dim:rgba(124,58,237,0.08);--purple-light:#ede9fe;
+  --font:'Plus Jakarta Sans',sans-serif;--mono:'DM Mono',monospace;
+  --radius:12px;--radius-sm:8px;
+  --shadow:0 1px 3px rgba(0,60,40,0.08),0 4px 16px rgba(0,60,40,0.06);
+  --shadow-sm:0 1px 2px rgba(0,60,40,0.06);
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;line-height:1.5}
+.page{max-width:1080px;margin:0 auto;padding:40px 28px 80px}
+
+/* Header */
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;flex-wrap:wrap;gap:12px}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{width:44px;height:44px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-icon svg{width:22px;height:22px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.logo-name{font-size:21px;font-weight:700;letter-spacing:-0.02em}
+.logo-name span{color:var(--accent)}
+.logo-sub{font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:1px}
+.header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.badge-days{background:var(--surface);border:1px solid var(--border);color:var(--muted);font-family:var(--mono);font-size:11px;padding:6px 12px;border-radius:99px}
+.hbtn{border-radius:99px;padding:7px 16px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:var(--mono);border:none}
+.hbtn-teal{background:var(--teal-light);color:var(--teal);border:1.5px solid rgba(8,145,178,0.25)}
+.hbtn-teal:hover{background:var(--teal-dim);border-color:var(--teal)}
+.hbtn-green{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 2px 8px rgba(13,158,110,0.25)}
+.hbtn-green:hover{opacity:0.88}
+.hbtn-red{background:transparent;color:var(--danger);border:1.5px solid rgba(229,62,62,0.25)}
+.hbtn-red:hover{background:var(--danger-dim);border-color:var(--danger)}
+
+/* Sync pill */
+#sync-pill{display:none;position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:500;background:var(--surface);border:1px solid var(--border);border-radius:99px;padding:6px 14px;font-family:var(--mono);font-size:11px;color:var(--muted);box-shadow:var(--shadow);align-items:center;gap:6px}
+
+/* Status bar */
+.status-bar{display:flex;align-items:center;gap:10px;padding:13px 18px;border-radius:var(--radius);font-size:13px;font-family:var(--mono);font-weight:500;margin-bottom:20px;border:1px solid transparent;transition:all 0.3s}
+.status-bar.ok{background:var(--success-dim);color:var(--success);border-color:rgba(5,150,105,0.2)}
+.status-bar.warn{background:var(--warn-dim);color:var(--warn);border-color:rgba(217,119,6,0.2)}
+.status-bar.danger{background:var(--danger-dim);color:var(--danger);border-color:rgba(229,62,62,0.2)}
+.sdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;animation:pulse 2s infinite}
+.ok .sdot{background:var(--success)}.warn .sdot{background:var(--warn)}.danger .sdot{background:var(--danger)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+/* Alert banner */
+.alert-banner{display:flex;align-items:flex-start;gap:14px;padding:16px 18px;border-radius:var(--radius);margin-bottom:16px;border:1.5px solid;animation:slideDown 0.3s ease}
+.alert-banner.awarn{background:#fffbeb;border-color:#f59e0b;color:#92400e}
+.alert-banner.adanger{background:#fef2f2;border-color:#ef4444;color:#991b1b}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.alert-icon{font-size:22px;flex-shrink:0;line-height:1;margin-top:1px}
+.alert-body{flex:1}.alert-title{font-size:14px;font-weight:700;margin-bottom:3px}.alert-msg{font-size:13px;opacity:0.85;line-height:1.5}
+.alert-close{background:transparent;border:none;font-size:16px;color:inherit;cursor:pointer;opacity:0.5;padding:0 4px;flex-shrink:0}.alert-close:hover{opacity:1}
+
+/* Hint card */
+.hint-card{background:linear-gradient(135deg,#f0fdf9,#e0f7ef);border:1.5px solid #6ee7b7;border-radius:var(--radius);padding:18px 20px;margin-bottom:20px;animation:slideDown 0.3s ease}
+.hint-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.hint-title{font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--accent)}
+.hint-body{font-size:13px;color:var(--text2);line-height:1.65;margin-bottom:12px}
+.hint-pills{display:flex;flex-wrap:wrap;gap:8px}
+.hpill{background:#fff;border:1.5px solid #6ee7b7;border-radius:99px;padding:5px 13px;font-size:12px;font-weight:600;color:var(--accent);font-family:var(--mono)}
+.hpill.red{border-color:#fca5a5;color:var(--danger);background:#fff5f5}
+.hpill.amber{border-color:#fcd34d;color:var(--warn);background:#fffbeb}
+
+/* Metrics */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden;transition:transform 0.15s,box-shadow 0.15s}
+.metric:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.metric::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.metric.c-green::before{background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.metric.c-teal::before{background:linear-gradient(90deg,var(--teal),#06b6d4)}
+.metric.c-amber::before{background:linear-gradient(90deg,var(--warn),#f59e0b)}
+.metric.c-purple::before{background:linear-gradient(90deg,var(--purple),#a78bfa)}
+.mlabel{font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.mval{font-family:var(--mono);font-size:24px;font-weight:500;letter-spacing:-0.02em;line-height:1}
+.mval.green{color:var(--accent)}.mval.blue{color:var(--teal)}.mval.red{color:var(--danger)}.mval.purple{color:var(--purple)}
+.msub{font-size:11px;color:var(--muted2);margin-top:5px;font-family:var(--mono)}
+
+/* Progress */
+.prog-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 24px;margin-bottom:20px;box-shadow:var(--shadow-sm)}
+.prog-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.prog-label{font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted)}
+.prog-pct{font-family:var(--mono);font-size:14px;font-weight:500;color:var(--text)}
+.prog-track{height:8px;background:var(--bg2);border-radius:99px;overflow:hidden}
+.prog-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width 0.5s ease}
+.prog-fill.warn{background:linear-gradient(90deg,var(--warn),#f59e0b)}
+.prog-fill.danger{background:linear-gradient(90deg,var(--danger),#f87171)}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:4px;margin-bottom:20px;box-shadow:var(--shadow-sm)}
+.tab{flex:1;padding:10px 16px;border-radius:9px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border:none;background:transparent;transition:all 0.2s;text-align:center}
+.tab:hover{color:var(--text2);background:var(--bg2)}
+.tab.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 2px 8px rgba(13,158,110,0.3)}
+.tab.t-purple.active{background:linear-gradient(135deg,var(--purple),#a78bfa);box-shadow:0 2px 8px rgba(124,58,237,0.3)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* Panel */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow-sm)}
+.panel-title{font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.ptdot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.field{margin-bottom:14px}.field:last-child{margin-bottom:0}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px}
+.field input,.field select{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 13px;font-family:var(--mono);font-size:14px;color:var(--text);outline:none;transition:border-color 0.2s,box-shadow 0.2s;-moz-appearance:textfield}
+.field input::-webkit-outer-spin-button,.field input::-webkit-inner-spin-button{-webkit-appearance:none}
+.field input:hover,.field select:hover{border-color:var(--border2)}
+.field input:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
+.field input.ro{background:var(--accent-light);border-color:transparent;color:var(--accent);cursor:default;font-weight:500}
+.field input.ro-purple{background:var(--purple-light);border-color:transparent;color:var(--purple);cursor:default;font-weight:500}
+.field input.ro-gray{background:var(--bg2);border-color:transparent;color:var(--muted);cursor:default}
+
+/* Calendar */
+.cal-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px;box-shadow:var(--shadow-sm)}
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.cal-ttl{font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted)}
+.cal-sub{font-size:12px;color:var(--muted2);margin-top:2px}
+.cal-nav{display:flex;align-items:center;gap:10px}
+.cal-ml{font-family:var(--mono);font-size:14px;font-weight:500;color:var(--text);min-width:110px;text-align:center}
+.cnav-btn{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);color:var(--muted);cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all 0.2s}
+.cnav-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-dim)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cal-dh{font-size:10px;font-weight:700;letter-spacing:0.06em;color:var(--muted2);text-align:center;padding:4px 0;text-transform:uppercase}
+.cal-cell{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:8px 7px 7px;cursor:pointer;transition:all 0.2s;min-height:72px;position:relative}
+.cal-cell:hover{border-color:var(--accent);background:var(--accent-dim);transform:translateY(-1px);box-shadow:var(--shadow-sm)}
+.cal-cell.empty{background:transparent;border-color:transparent;cursor:default;pointer-events:none}
+.cal-cell.today{border-color:var(--accent);background:var(--accent-dim)}
+.cal-cell.over{border-color:rgba(229,62,62,0.4);background:var(--danger-light)}
+.cal-cell.under{border-color:rgba(5,150,105,0.35);background:#f0faf6}
+.cdate{font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:500}
+.cal-cell.today .cdate{color:var(--accent);font-weight:700}
+.camps{display:flex;flex-direction:column;gap:2px}
+.camp{font-family:var(--mono);font-size:10px;color:var(--muted2)}
+.cama{font-family:var(--mono);font-size:11px;font-weight:500}
+.cama.ok{color:var(--success)}.cama.over{color:var(--danger)}
+.cdiff{font-family:var(--mono);font-size:9px;margin-top:1px}
+.cdiff.pos{color:var(--success)}.cdiff.neg{color:var(--danger)}
+.ctdot{width:5px;height:5px;border-radius:50%;background:var(--purple);position:absolute;top:7px;right:7px}
+
+/* Transport */
+.tr-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.tr-title{font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted)}
+.btn-add-tr{background:linear-gradient(135deg,var(--purple),#a78bfa);color:#fff;border:none;border-radius:var(--radius-sm);padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(124,58,237,0.25);font-family:var(--font)}
+.btn-add-tr:hover{opacity:0.88}
+.tr-empty{text-align:center;padding:36px 20px;color:var(--muted2);font-size:13px}
+.tr-empty-icon{font-size:32px;margin-bottom:8px}
+.tr-row{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:grid;grid-template-columns:1.5fr 1fr 130px 36px;gap:12px;align-items:center;margin-bottom:10px;transition:border-color 0.2s}
+.tr-row:hover{border-color:var(--border2)}
+.tr-fl{display:flex;flex-direction:column;gap:4px}
+.tr-fl-label{font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted)}
+.tr-inp{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;font-family:var(--mono);font-size:13px;color:var(--text);outline:none;width:100%;transition:border-color 0.2s;-moz-appearance:textfield}
+.tr-inp::-webkit-outer-spin-button,.tr-inp::-webkit-inner-spin-button{-webkit-appearance:none}
+.tr-inp:focus{border-color:var(--purple);box-shadow:0 0 0 3px var(--purple-dim)}
+.tr-del{background:transparent;border:1.5px solid var(--border);border-radius:var(--radius-sm);color:var(--muted2);cursor:pointer;width:36px;height:36px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;font-size:15px;flex-shrink:0}
+.tr-del:hover{border-color:var(--danger);color:var(--danger);background:var(--danger-dim)}
+.tr-total-bar{background:var(--purple-light);border:1.5px solid rgba(124,58,237,0.2);border-radius:var(--radius);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;margin-top:16px}
+.tr-total-label{font-size:11px;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:var(--purple)}
+.tr-total-val{font-family:var(--mono);font-size:22px;font-weight:500;color:var(--purple)}
+.tr-total-sub{font-size:11px;color:var(--muted2);font-family:var(--mono)}
+
+/* Breakdown */
+.bk-table{width:100%;border-collapse:collapse}
+.bk-table tr{border-bottom:1px solid var(--border)}
+.bk-table tr:last-child{border-bottom:none}
+.bk-table td{padding:10px 0;font-size:13px}
+.bk-table td:first-child{color:var(--muted);font-weight:500}
+.bk-table td:last-child{text-align:right;font-family:var(--mono);font-weight:500;color:var(--text)}
+.bk-table tr.hl td:last-child{color:var(--accent);font-weight:700}
+.bk-table tr.hl-blue td:last-child{color:var(--teal)}
+.bk-table tr.hl-purple td:last-child{color:var(--purple)}
+.bk-table tr.total-row td{font-weight:700;font-size:14px;border-top:2px solid var(--border2);padding-top:14px}
+.bk-table tr.total-row td:last-child{color:var(--accent);font-size:16px}
+.bk-sec td{padding-top:16px!important;font-size:10px!important;font-weight:700!important;letter-spacing:0.1em!important;text-transform:uppercase!important;color:var(--muted2)!important;border-bottom:none!important}
+
+/* Chart */
+.chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow-sm)}
+.chart-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px}
+.chart-ttl{font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted)}
+.chart-legend{display:flex;gap:16px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);font-family:var(--mono)}
+.ldot{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+.chart-canvas-wrap{position:relative;height:210px}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(15,45,34,0.45);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:200}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:28px;width:380px;box-shadow:0 20px 60px rgba(0,60,40,0.2)}
+.modal-ey{font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.modal-dt{font-size:22px;font-weight:700;color:var(--text);margin-bottom:22px;letter-spacing:-0.02em}
+.mfield{margin-bottom:14px}
+.mfield label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px}
+.mfield input{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 13px;font-family:var(--mono);font-size:15px;color:var(--text);outline:none;-moz-appearance:textfield;transition:border-color 0.2s,box-shadow 0.2s}
+.mfield input::-webkit-outer-spin-button,.mfield input::-webkit-inner-spin-button{-webkit-appearance:none}
+.mfield input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
+.mactions{display:flex;gap:8px;margin-top:20px}
+.mbtn-save{flex:1;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:var(--radius-sm);padding:11px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(13,158,110,0.25);font-family:var(--font)}
+.mbtn-save:hover{opacity:0.88}
+.mbtn-clear{background:var(--danger-light);color:var(--danger);border:1px solid rgba(229,62,62,0.2);border-radius:var(--radius-sm);padding:11px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)}
+.mbtn-cancel{background:var(--surface2);color:var(--muted);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:11px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)}
+
+/* Share modal */
+.share-box{background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:14px}
+.share-box-label{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.share-url{font-family:var(--mono);font-size:11px;color:var(--text2);word-break:break-all;line-height:1.6;max-height:72px;overflow-y:auto}
+.share-divider{border:none;border-top:1px solid var(--border);margin:18px 0}
+.import-ta{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-family:var(--mono);font-size:12px;color:var(--text);outline:none;resize:vertical;min-height:60px;line-height:1.5}
+.import-ta:focus{border-color:var(--teal)}
+.btn-import{width:100%;margin-top:8px;background:linear-gradient(135deg,var(--teal),#06b6d4);color:#fff;border:none;border-radius:var(--radius-sm);padding:10px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(8,145,178,0.25);font-family:var(--font)}
+
+/* Toast */
+#toast{position:fixed;bottom:24px;right:24px;background:var(--surface);border:1.5px solid var(--accent);color:var(--accent);font-family:var(--mono);font-size:12px;font-weight:500;padding:10px 18px;border-radius:99px;opacity:0;transform:translateY(10px);transition:opacity 0.25s,transform 0.25s;pointer-events:none;z-index:600;box-shadow:var(--shadow)}
+#toast.show{opacity:1;transform:translateY(0)}
+
+@media(max-width:760px){
+  .metrics{grid-template-columns:repeat(2,1fr)}
+  .two-col{grid-template-columns:1fr}
+  .tr-row{grid-template-columns:1fr 1fr;grid-template-rows:auto auto}
+  .tr-del{grid-column:2;grid-row:2;justify-self:end}
+  .page{padding:20px 14px 60px}
+  .header{flex-direction:column;align-items:flex-start}
+  .modal{width:95vw}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- Header -->
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    </div>
+    <div>
+      <div class="logo-name">Budget <span>Tracker</span></div>
+      <div class="logo-sub" id="hdr-month">June 2026</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="badge-days" id="hdr-days">— days left</span>
+    <button class="hbtn hbtn-teal" onclick="openShareModal()">🔗 Share</button>
+    <button class="hbtn hbtn-green" onclick="downloadCSV()">⬇ Export CSV</button>
+    <button class="hbtn hbtn-red" onclick="clearAll()">Clear all</button>
+  </div>
+</div>
+
+<!-- Status -->
+<div class="status-bar ok" id="status-bar">
+  <div class="sdot"></div>
+  <span id="status-msg">Loading data…</span>
+</div>
+
+<!-- Alert banner -->
+<div class="alert-banner awarn" id="alert-banner" style="display:none">
+  <div class="alert-icon" id="alert-icon">⚠️</div>
+  <div class="alert-body">
+    <div class="alert-title" id="alert-title"></div>
+    <div class="alert-msg" id="alert-msg"></div>
+  </div>
+  <button class="alert-close" onclick="this.parentElement.style.display='none'">✕</button>
+</div>
+
+<!-- Hint card -->
+<div class="hint-card" id="hint-card" style="display:none">
+  <div class="hint-head"><span style="font-size:18px">💡</span><span class="hint-title">Spending hint</span></div>
+  <div class="hint-body" id="hint-body"></div>
+  <div class="hint-pills" id="hint-pills"></div>
+</div>
+
+<!-- Metrics -->
+<div class="metrics">
+  <div class="metric c-green">
+    <div class="mlabel">Monthly allocation</div>
+    <div class="mval green" id="m-alloc">300,000</div>
+    <div class="msub">LKR total budget</div>
+  </div>
+  <div class="metric c-teal">
+    <div class="mlabel">Balance remaining</div>
+    <div class="mval blue" id="m-balance">—</div>
+    <div class="msub">available to spend</div>
+  </div>
+  <div class="metric c-amber">
+    <div class="mlabel">Per day target</div>
+    <div class="mval" id="m-perday">—</div>
+    <div class="msub">LKR / day remaining</div>
+  </div>
+  <div class="metric c-purple">
+    <div class="mlabel" id="m-tr-label">Other Dept. Transport</div>
+    <div class="mval purple" id="m-transport">0</div>
+    <div class="msub">incl. in grand total</div>
+  </div>
+</div>
+
+<!-- Progress -->
+<div class="prog-wrap">
+  <div class="prog-head">
+    <span class="prog-label">Budget used</span>
+    <span class="prog-pct" id="prog-pct">0%</span>
+  </div>
+  <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('budget',this)">📊 Budget & Calendar</button>
+  <button class="tab t-purple" onclick="switchTab('transport',this)">🚗 <span id="tr-tab-label" contenteditable="true" onclick="event.stopPropagation()" onblur="onTabNameBlur(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}" style="outline:none;min-width:30px;display:inline-block" title="Click to rename">Other Department Transportation</span></button>
+  <button class="tab" onclick="switchTab('breakdown',this)">📋 Full Breakdown</button>
+</div>
+
+<!-- ═══ TAB: BUDGET ═══ -->
+<div class="tab-panel active" id="tab-budget">
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-title"><div class="ptdot"></div>Budget setup</div>
+      <div class="field"><label>Monthly allocation (LKR)</label><input type="number" id="inp-alloc" value="300000" oninput="onAllocChange()"></div>
+      <div class="field"><label>Days in month ← auto</label><input type="number" id="inp-days-total" class="ro-gray" readonly></div>
+      <div class="field"><label>Days elapsed ← auto from today</label><input type="number" id="inp-days-elapsed" class="ro-gray" readonly></div>
+      <div class="field"><label>Days left ← auto from today</label><input type="number" id="inp-days-left" class="ro-gray" readonly></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title"><div class="ptdot"></div>Cost tracking (auto)</div>
+      <div class="field"><label>Estimated cost ← calendar planned total</label><input type="number" id="inp-estimated" class="ro" readonly></div>
+      <div class="field"><label>Actual cost ← calendar actual total</label><input type="number" id="inp-actual" class="ro" readonly></div>
+      <div class="field"><label>Transport total ← transport tab</label><input type="number" id="inp-tr-display" class="ro-purple" readonly></div>
+      <div class="field"><label>Grand total (actual + transport)</label><input type="number" id="inp-grand" class="ro" readonly style="font-size:16px"></div>
+    </div>
+  </div>
+
+  <!-- Calendar -->
+  <div class="cal-wrap">
+    <div class="cal-head">
+      <div>
+        <div class="cal-ttl">Daily spend calendar</div>
+        <div class="cal-sub">Click any day to enter planned &amp; actual spend</div>
+      </div>
+      <div class="cal-nav">
+        <button class="cnav-btn" onclick="changeMonth(-1)">&#8249;</button>
+        <span class="cal-ml" id="cal-ml">June 2026</span>
+        <button class="cnav-btn" onclick="changeMonth(1)">&#8250;</button>
+      </div>
+    </div>
+    <div class="cal-grid" id="cal-headers"></div>
+    <div style="height:6px"></div>
+    <div class="cal-grid" id="cal-grid"></div>
+  </div>
+</div>
+
+<!-- ═══ TAB: TRANSPORT ═══ -->
+<div class="tab-panel" id="tab-transport">
+  <div class="panel">
+    <div class="tr-header">
+      <div>
+        <div class="tr-title" id="tr-panel-title">Other Department Transportation</div>
+        <div style="font-size:12px;color:var(--muted2);margin-top:2px">Each entry adds to grand total automatically</div>
+      </div>
+      <button class="btn-add-tr" onclick="addTrRow()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add entry
+      </button>
+    </div>
+    <div id="tr-list">
+      <div class="tr-empty" id="tr-empty">
+        <div class="tr-empty-icon">🚗</div>
+        <div>No transport entries yet.</div>
+        <div style="font-size:12px;margin-top:4px">Click "Add entry" to get started.</div>
+      </div>
+    </div>
+    <div class="tr-total-bar">
+      <div>
+        <div class="tr-total-label" id="tr-total-label">Total transport</div>
+        <div class="tr-total-sub">added to grand total</div>
+      </div>
+      <div class="tr-total-val" id="tr-total-val">LKR 0</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB: BREAKDOWN ═══ -->
+<div class="tab-panel" id="tab-breakdown">
+  <div class="panel" style="margin-bottom:20px">
+    <div class="panel-title"><div class="ptdot"></div>Full breakdown</div>
+    <table class="bk-table">
+      <tr class="bk-sec"><td colspan="2">Budget</td></tr>
+      <tr><td>Monthly allocation</td><td id="b-alloc">—</td></tr>
+      <tr><td>Days left</td><td id="b-days">—</td></tr>
+      <tr><td>Per day target</td><td id="b-perday">—</td></tr>
+      <tr class="bk-sec"><td colspan="2">Calendar spend</td></tr>
+      <tr><td>Estimated (planned total)</td><td id="b-est">0</td></tr>
+      <tr class="hl"><td>Actual (calendar total)</td><td id="b-actual">0</td></tr>
+      <tr><td>Days with entries</td><td id="b-cal-days">0</td></tr>
+      <tr><td>Planned vs actual diff</td><td id="b-diff">0</td></tr>
+      <tr class="bk-sec"><td colspan="2">Transport</td></tr>
+      <tr class="hl-purple"><td id="b-tr-label">Transport total</td><td id="b-transport">0</td></tr>
+      <tr><td>Transport entries</td><td id="b-tr-count">0</td></tr>
+      <tr class="bk-sec"><td colspan="2">Summary</td></tr>
+      <tr class="hl-blue"><td>Grand total (actual + transport)</td><td id="b-grand">0</td></tr>
+      <tr class="hl"><td>Balance remaining</td><td id="b-balance">0</td></tr>
+      <tr class="total-row hl"><td>Net savings</td><td id="b-savings">0</td></tr>
+    </table>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-top">
+      <div class="chart-ttl">Spend overview</div>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="ldot" style="background:#0d9e6e"></div>Calendar actual</div>
+        <div class="legend-item"><div class="ldot" style="background:#7c3aed"></div>Transport</div>
+        <div class="legend-item"><div class="ldot" style="background:#0891b2"></div>Balance</div>
+        <div class="legend-item"><div class="ldot" style="background:#d1fae5"></div>Allocation</div>
+      </div>
+    </div>
+    <div class="chart-canvas-wrap">
+      <canvas id="myChart" role="img" aria-label="Spend overview bar chart"></canvas>
+    </div>
+  </div>
+</div>
+
+</div><!-- end .page -->
+
+<!-- Day Modal -->
+<div class="modal-overlay" id="day-modal">
+  <div class="modal">
+    <div class="modal-ey">Daily entry</div>
+    <div class="modal-dt" id="modal-date">12 June 2026</div>
+    <div class="mfield"><label>Planned spend (LKR)</label><input type="number" id="modal-planned" placeholder="0"></div>
+    <div class="mfield"><label>Actual spend (LKR)</label><input type="number" id="modal-actual" placeholder="0"></div>
+    <div class="mactions">
+      <button class="mbtn-save" onclick="saveDay()">Save</button>
+      <button class="mbtn-clear" onclick="clearDay()">Clear day</button>
+      <button class="mbtn-cancel" onclick="closeDayModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Share Modal -->
+<div class="modal-overlay" id="share-modal">
+  <div class="modal" style="width:460px">
+    <div class="modal-ey">Share & sync</div>
+    <div class="modal-dt" style="font-size:18px;margin-bottom:8px">🔗 Share your data</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">Data is synced live via Google Sheets. Share this link — anyone who opens it sees your live data automatically.</p>
+    <div class="share-box">
+      <div class="share-box-label">Live URL</div>
+      <div class="share-url" id="share-url-text">—</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="mbtn-save" id="copy-btn" onclick="copyLink()" style="flex:1">📋 Copy link</button>
+      <button class="mbtn-cancel" onclick="closeShareModal()">Close</button>
+    </div>
+    <hr class="share-divider">
+    <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:6px">📥 Import from a link</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:8px">If someone shared a URL with ?d= encoded data, paste it here.</p>
+    <textarea class="import-ta" id="import-ta" placeholder="Paste share link here…"></textarea>
+    <button class="btn-import" onclick="importFromURL()">📥 Import & Load</button>
+  </div>
+</div>
+
+<!-- Sync pill -->
+<div id="sync-pill">⏳ <span id="sync-text">Syncing…</span></div>
+<!-- Toast -->
+<div id="toast">Saved ✓</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════════
+const API = 'https://script.google.com/macros/s/AKfycbwf00N4Oq1_aj1UXnWEIqEiga7AVAHCyK2VIj8zaMSfls3JwAvA6OpeMd9eWqq5FR-W/exec';
+const LS  = 'budgetTracker_v3';
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const WARNING_AT = 250000;
+
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+let dayData = {};
+let trEntries = [];
+let nextTrId = 1;
+let calYear, calMonth;
+let editingKey = null;
+let saveTimer = null;
+
+// ═══════════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════════
+const fmt  = n => Math.round(n).toLocaleString();
+const fmtK = n => { const v=Math.round(n); return v>=1000?(v/1000).toFixed(1)+'k':String(v); };
+const dayKey = (y,m,d) => `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+const $ = id => document.getElementById(id);
+
+function tabName(){ return $('tr-tab-label').textContent.trim() || 'Other Department Transportation'; }
+
+// ═══════════════════════════════════════════════════════════
+// DAYS AUTO-CALC
+// ═══════════════════════════════════════════════════════════
+function updateDays(){
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth();
+  const dim = new Date(y, m+1, 0).getDate();
+  const today = now.getDate();
+  $('inp-days-total').value   = dim;
+  $('inp-days-elapsed').value = today - 1;
+  $('inp-days-left').value    = dim - today + 1;
+  $('hdr-month').textContent  = MONTHS[m] + ' ' + y;
+  $('hdr-days').textContent   = (dim - today + 1) + ' days left';
+  if(calYear === undefined){ calYear = y; calMonth = m; }
+}
+
+// ═══════════════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════════════
+function switchTab(name, btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  $('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+}
+
+function onTabNameBlur(el){
+  const name = el.textContent.trim() || 'Other Department Transportation';
+  el.textContent = name;
+  $('tr-panel-title').textContent = name;
+  $('tr-total-label').textContent = 'Total — ' + name;
+  $('b-tr-label').textContent = name + ' total';
+  const short = name.length > 20 ? name.substring(0,18)+'…' : name;
+  $('m-tr-label').textContent = short;
+  scheduleSave();
+}
+
+// ═══════════════════════════════════════════════════════════
+// CALENDAR
+// ═══════════════════════════════════════════════════════════
+function changeMonth(dir){
+  calMonth += dir;
+  if(calMonth > 11){ calMonth=0; calYear++; }
+  if(calMonth < 0) { calMonth=11; calYear--; }
+  renderCal();
+}
+
+function renderCal(){
+  $('cal-ml').textContent = MONTHS[calMonth] + ' ' + calYear;
+  $('cal-headers').innerHTML = DAYS.map(d=>`<div class="cal-dh">${d}</div>`).join('');
+  const grid = $('cal-grid');
+  grid.innerHTML = '';
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const dim = new Date(calYear, calMonth+1, 0).getDate();
+  const now = new Date();
+  const todayKey = dayKey(now.getFullYear(), now.getMonth(), now.getDate());
+  const alloc = parseFloat($('inp-alloc').value)||300000;
+  const dTotal = parseFloat($('inp-days-total').value)||30;
+  const dailyTarget = alloc/dTotal;
+
+  // transport by date
+  const tByDate = {};
+  trEntries.forEach(e=>{ if(e.date) tByDate[e.date]=(tByDate[e.date]||0)+(e.amount||0); });
+
+  for(let i=0;i<firstDay;i++){
+    const el=document.createElement('div');el.className='cal-cell empty';grid.appendChild(el);
+  }
+  for(let d=1;d<=dim;d++){
+    const key=dayKey(calYear,calMonth,d);
+    const data=dayData[key];
+    const tAmt=tByDate[key]||0;
+    const cell=document.createElement('div');
+    let cls='cal-cell';
+    if(key===todayKey) cls+=' today';
+    if(data){
+      cls+=' ';
+      if(data.actual>0&&data.planned>0) cls+=data.actual>data.planned*1.1?'over':'under';
+      else if(data.actual>dailyTarget*1.1) cls+='over';
+      else if(data.actual>0) cls+='under';
+    }
+    cell.className=cls;
+    cell.onclick=()=>openDayModal(key,d);
+    let html=`<div class="cdate">${d}</div>`;
+    if(data){
+      const diff=data.planned>0?data.actual-data.planned:null;
+      const ac=data.planned>0?(data.actual>data.planned*1.1?'over':'ok'):(data.actual>dailyTarget*1.1?'over':'ok');
+      html+=`<div class="camps">`;
+      if(data.planned>0) html+=`<div class="camp">P:${fmtK(data.planned)}</div>`;
+      if(data.actual>0)  html+=`<div class="cama ${ac}">A:${fmtK(data.actual)}</div>`;
+      if(diff!==null&&data.actual>0){const s=diff>0?'+':'';html+=`<div class="cdiff ${diff>0?'neg':'pos'}">${s}${fmtK(diff)}</div>`;}
+      html+=`</div>`;
+    }
+    if(tAmt>0) html+=`<div class="ctdot" title="Transport: ${fmt(tAmt)}"></div>`;
+    cell.innerHTML=html;
+    grid.appendChild(cell);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// DAY MODAL
+// ═══════════════════════════════════════════════════════════
+function openDayModal(key,d){
+  editingKey=key;
+  const data=dayData[key]||{};
+  const [y,m]=key.split('-');
+  $('modal-date').textContent=`${d} ${MONTHS[parseInt(m)-1]} ${y}`;
+  $('modal-planned').value=data.planned||'';
+  $('modal-actual').value=data.actual||'';
+  $('day-modal').classList.add('open');
+  setTimeout(()=>$('modal-planned').focus(),50);
+}
+function closeDayModal(){ $('day-modal').classList.remove('open'); editingKey=null; }
+function saveDay(){
+  if(!editingKey) return;
+  const p=parseFloat($('modal-planned').value)||0;
+  const a=parseFloat($('modal-actual').value)||0;
+  if(p===0&&a===0) delete dayData[editingKey];
+  else dayData[editingKey]={planned:p,actual:a};
+  closeDayModal(); renderCal(); recalc(); scheduleSave();
+}
+function clearDay(){
+  if(!editingKey) return;
+  delete dayData[editingKey];
+  closeDayModal(); renderCal(); recalc(); scheduleSave();
+}
+
+// ═══════════════════════════════════════════════════════════
+// TRANSPORT
+// ═══════════════════════════════════════════════════════════
+function addTrRow(entry){
+  const id = entry ? entry.id : nextTrId++;
+  if(!entry) trEntries.push({id,label:'',amount:0,date:''});
+  $('tr-empty').style.display='none';
+  const row=document.createElement('div');
+  row.className='tr-row'; row.id='trow-'+id;
+  const ex=trEntries.find(e=>e.id===id)||{};
+  row.innerHTML=`
+    <div class="tr-fl">
+      <div class="tr-fl-label">Description</div>
+      <input class="tr-inp" type="text" placeholder="e.g. Fuel – Colombo trip" value="${ex.label||''}" oninput="updateTr(${id},'label',this.value)">
+    </div>
+    <div class="tr-fl">
+      <div class="tr-fl-label">Amount (LKR)</div>
+      <input class="tr-inp" type="number" placeholder="0" value="${ex.amount||''}" oninput="updateTr(${id},'amount',this.value)">
+    </div>
+    <div class="tr-fl">
+      <div class="tr-fl-label">Date (optional)</div>
+      <input class="tr-inp" type="date" value="${ex.date||''}" onchange="updateTr(${id},'date',this.value)" style="font-family:var(--font);font-size:12px">
+    </div>
+    <button class="tr-del" onclick="deleteTr(${id})" title="Delete">✕</button>`;
+  $('tr-list').appendChild(row);
+}
+function updateTr(id,field,value){
+  const e=trEntries.find(e=>e.id===id); if(!e) return;
+  e[field]=field==='amount'?parseFloat(value)||0:value;
+  recalc(); renderCal(); scheduleSave();
+}
+function deleteTr(id){
+  trEntries=trEntries.filter(e=>e.id!==id);
+  const row=$('trow-'+id); if(row) row.remove();
+  if(trEntries.length===0) $('tr-empty').style.display='';
+  recalc(); renderCal(); scheduleSave();
+}
+function renderTransport(){
+  $('tr-list').querySelectorAll('.tr-row').forEach(r=>r.remove());
+  if(trEntries.length===0){ $('tr-empty').style.display=''; }
+  else { $('tr-empty').style.display='none'; trEntries.forEach(e=>addTrRow(e)); }
+}
+
+// ═══════════════════════════════════════════════════════════
+// RECALC
+// ═══════════════════════════════════════════════════════════
+function onAllocChange(){ recalc(); scheduleSave(); }
+
+function recalc(){
+  updateDays();
+  const alloc    = parseFloat($('inp-alloc').value)||0;
+  const daysLeft = parseFloat($('inp-days-left').value)||1;
+
+  let calActual=0,calPlanned=0,calDays=0;
+  for(const k in dayData){
+    const d=dayData[k];
+    if(d.actual>0||d.planned>0) calDays++;
+    calActual+=d.actual||0; calPlanned+=d.planned||0;
+  }
+  const trTotal = trEntries.reduce((s,e)=>s+(e.amount||0),0);
+  const grand   = calActual+trTotal;
+  const balance = alloc-grand;
+  const perDay  = daysLeft>0?balance/daysLeft:0;
+  const usedPct = alloc>0?Math.min(100,(grand/alloc)*100):0;
+  const diff    = calPlanned-calActual;
+  const savings = alloc-grand;
+
+  // Inputs (auto-filled)
+  $('inp-estimated').value  = Math.round(calPlanned);
+  $('inp-actual').value     = Math.round(calActual);
+  $('inp-tr-display').value = Math.round(trTotal);
+  $('inp-grand').value      = Math.round(grand);
+
+  // Metrics
+  $('m-alloc').textContent    = fmt(alloc);
+  $('m-balance').textContent  = fmt(balance);
+  $('m-balance').className    = 'mval '+(balance<0?'red':'blue');
+  $('m-perday').textContent   = fmt(perDay);
+  $('m-transport').textContent= fmt(trTotal);
+
+  // Progress
+  $('prog-pct').textContent  = usedPct.toFixed(1)+'%';
+  const fill=$('prog-fill');
+  fill.style.width=usedPct+'%';
+  fill.className='prog-fill'+(usedPct>85?' danger':usedPct>65?' warn':'');
+
+  // Status
+  const sb=$('status-bar'), sm=$('status-msg');
+  sb.className='status-bar';
+  if(balance<0){ sb.classList.add('danger'); sm.textContent='Over budget — grand total exceeds monthly allocation.'; }
+  else if(usedPct>80||perDay>(alloc/30)*1.3){ sb.classList.add('warn'); sm.textContent='Caution — daily target elevated. Monitor spend closely.'; }
+  else{ sb.classList.add('ok'); sm.textContent='On track — balance comfortably covers remaining days.'; }
+
+  // Alert banner (250k warning)
+  const banner=$('alert-banner');
+  banner.style.display='none'; banner.className='alert-banner';
+  if(grand>=alloc){
+    banner.style.display='flex'; banner.classList.add('adanger');
+    $('alert-title').textContent='🚨 Budget exceeded!';
+    $('alert-msg').textContent=`Grand total (LKR ${fmt(grand)}) has passed the LKR ${fmt(alloc)} allocation. You are LKR ${fmt(grand-alloc)} over budget.`;
+  } else if(grand>=WARNING_AT){
+    banner.style.display='flex'; banner.classList.add('awarn');
+    $('alert-title').textContent=`⚠️ Spending crossed LKR ${fmt(WARNING_AT)}`;
+    $('alert-msg').textContent=`Total spend is LKR ${fmt(grand)}. Only LKR ${fmt(balance)} remains — spread across ${daysLeft} days.`;
+  }
+
+  // Hint card
+  const hc=$('hint-card'); hc.style.display='none';
+  if(daysLeft>0&&alloc>0){
+    const idealDaily=alloc/(parseFloat($('inp-days-total').value)||30);
+    const safeDaily=balance/daysLeft;
+    const pctUsed=(grand/alloc)*100;
+    let hints=[],pills=[];
+    if(balance<0){
+      hints.push(`You've overspent by <strong>LKR ${fmt(Math.abs(balance))}</strong>. No further spend recommended.`);
+      pills.push({l:'Over by LKR '+fmt(Math.abs(balance)),c:'red'});
+    } else if(safeDaily<idealDaily*0.5){
+      hints.push(`Your remaining daily budget is <strong>LKR ${fmt(Math.round(safeDaily))}</strong> — well below the ideal LKR ${fmt(Math.round(idealDaily))}/day. Review large expenses to stay on track.`);
+      pills.push({l:'Max/day: LKR '+fmt(Math.round(safeDaily)),c:'amber'});
+      pills.push({l:'Ideal/day: LKR '+fmt(Math.round(idealDaily)),c:''});
+    } else if(safeDaily<idealDaily){
+      hints.push(`You have <strong>LKR ${fmt(Math.round(balance))}</strong> left for ${daysLeft} days — that's <strong>LKR ${fmt(Math.round(safeDaily))}</strong>/day. Slightly tight but manageable!`);
+      pills.push({l:'Safe/day: LKR '+fmt(Math.round(safeDaily)),c:''});
+      pills.push({l:'Ideal/day: LKR '+fmt(Math.round(idealDaily)),c:''});
+      pills.push({l:pctUsed.toFixed(0)+'% used',c:''});
+    } else {
+      const surplus=alloc-(grand+safeDaily*daysLeft);
+      hints.push(`Healthy pace. <strong>LKR ${fmt(Math.round(balance))}</strong> over ${daysLeft} days = <strong>LKR ${fmt(Math.round(safeDaily))}</strong>/day.`);
+      hints.push(`At this rate you'll end the month with approximately <strong>LKR ${fmt(Math.round(Math.max(0,surplus)))}</strong> to spare.`);
+      pills.push({l:'Safe/day: LKR '+fmt(Math.round(safeDaily)),c:''});
+      pills.push({l:pctUsed.toFixed(0)+'% used',c:''});
+    }
+    if(hints.length){
+      hc.style.display='block';
+      $('hint-body').innerHTML=hints.join('<br><br>');
+      $('hint-pills').innerHTML=pills.map(p=>`<span class="hpill ${p.c}">${p.l}</span>`).join('');
+    }
+  }
+
+  // Breakdown table
+  $('b-alloc').textContent   = fmt(alloc);
+  $('b-days').textContent    = daysLeft;
+  $('b-perday').textContent  = fmt(perDay);
+  $('b-est').textContent     = fmt(calPlanned);
+  $('b-actual').textContent  = fmt(calActual);
+  $('b-cal-days').textContent= calDays;
+  $('b-diff').textContent    = (diff>=0?'+':'')+fmt(diff);
+  $('b-transport').textContent=fmt(trTotal);
+  $('b-tr-count').textContent= trEntries.length;
+  $('b-grand').textContent   = fmt(grand);
+  $('b-balance').textContent = fmt(balance);
+  $('b-savings').textContent = (savings>=0?'+':'')+fmt(savings);
+
+  // Transport total bar
+  $('tr-total-val').textContent='LKR '+fmt(trTotal);
+
+  // Chart
+  if(window._chart){
+    window._chart.data.datasets[0].data=[calActual,trTotal,balance>0?balance:0,alloc];
+    window._chart.update();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// GOOGLE SHEETS SYNC
+// ═══════════════════════════════════════════════════════════
+function buildPayload(){
+  return {
+    v:3,
+    allocation: $('inp-alloc').value,
+    tabName: tabName(),
+    dayData, trEntries, nextTrId
+  };
+}
+
+function applyPayload(p){
+  if(!p||!p.v) return false;
+  if(p.allocation) $('inp-alloc').value=p.allocation;
+  if(p.dayData)    dayData=p.dayData;
+  if(p.trEntries)  trEntries=p.trEntries;
+  if(p.nextTrId)   nextTrId=p.nextTrId;
+  if(p.tabName){
+    $('tr-tab-label').textContent=p.tabName;
+    $('tr-panel-title').textContent=p.tabName;
+    $('tr-total-label').textContent='Total — '+p.tabName;
+    $('b-tr-label').textContent=p.tabName+' total';
+    const short=p.tabName.length>20?p.tabName.substring(0,18)+'…':p.tabName;
+    $('m-tr-label').textContent=short;
+  }
+  return true;
+}
+
+function showSync(msg){ const p=$('sync-pill'); p.style.display='flex'; $('sync-text').textContent=msg; }
+function hideSync(){ $('sync-pill').style.display='none'; }
+
+function saveNow(){
+  const payload=buildPayload();
+  const json=JSON.stringify(payload);
+  try{ localStorage.setItem(LS,json); }catch(e){}
+  showSync('Syncing…');
+  fetch(API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:json})
+    .then(()=>{ hideSync(); toast('Synced ✓','var(--accent)','var(--border)'); })
+    .catch(()=>{ hideSync(); toast('Saved locally (offline)','var(--warn)','rgba(217,119,6,0.3)'); });
+}
+
+// Debounce saves — wait 800ms after last change
+function scheduleSave(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(saveNow, 800);
+}
+
+function loadData(){
+  showSync('Loading…');
+  return fetch(API+'?t='+Date.now(),{method:'GET',mode:'cors'})
+    .then(r=>r.text())
+    .then(text=>{
+      hideSync();
+      try{
+        const p=JSON.parse(text);
+        if(p&&p.v&&p.v>=2){
+          applyPayload(p);
+          try{localStorage.setItem(LS,text);}catch(e){}
+          return true;
+        }
+      }catch(e){}
+      return loadLocal();
+    })
+    .catch(()=>{ hideSync(); toast('Offline — local data loaded','var(--warn)','rgba(217,119,6,0.3)'); return loadLocal(); });
+}
+
+function loadLocal(){
+  try{
+    const raw=localStorage.getItem(LS);
+    if(!raw) return false;
+    return applyPayload(JSON.parse(raw));
+  }catch(e){return false;}
+}
+
+function clearAll(){
+  if(!confirm('Clear ALL data for everyone? This cannot be undone.')) return;
+  dayData={}; trEntries=[]; nextTrId=1;
+  $('inp-alloc').value=300000;
+  renderCal(); renderTransport(); recalc();
+  saveNow();
+}
+
+// ═══════════════════════════════════════════════════════════
+// SHARE VIA URL
+// ═══════════════════════════════════════════════════════════
+function buildShareURL(){
+  const p=buildPayload();
+  const encoded=btoa(unescape(encodeURIComponent(JSON.stringify(p))));
+  const base=window.location.href.split('?')[0].split('#')[0];
+  return base+'?d='+encoded;
+}
+
+function openShareModal(){
+  $('share-url-text').textContent=buildShareURL();
+  $('import-ta').value='';
+  $('copy-btn').textContent='📋 Copy link';
+  $('share-modal').classList.add('open');
+}
+function closeShareModal(){ $('share-modal').classList.remove('open'); }
+
+function copyLink(){
+  const url=buildShareURL();
+  navigator.clipboard.writeText(url)
+    .then(()=>{ $('copy-btn').textContent='✅ Copied!'; setTimeout(()=>$('copy-btn').textContent='📋 Copy link',2500); })
+    .catch(()=>{ const ta=document.createElement('textarea');ta.value=url;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);$('copy-btn').textContent='✅ Copied!';setTimeout(()=>$('copy-btn').textContent='📋 Copy link',2500); });
+}
+
+function importFromURL(){
+  const input=$('import-ta').value.trim();
+  if(!input){alert('Paste a share link first.');return;}
+  try{
+    let enc=input;
+    if(input.includes('?d=')) enc=input.split('?d=')[1].split('&')[0];
+    const p=JSON.parse(decodeURIComponent(escape(atob(enc))));
+    if(!p.v) throw new Error('invalid');
+    if(!confirm('Replace your current data with the imported data?')) return;
+    applyPayload(p);
+    saveNow(); renderCal(); renderTransport(); recalc();
+    closeShareModal();
+    toast('Data imported ✓','var(--teal)','rgba(8,145,178,0.3)');
+  }catch(e){ alert('Invalid link. Make sure you pasted the full share URL.'); }
+}
+
+function checkURLData(){
+  try{
+    const params=new URLSearchParams(window.location.search);
+    const d=params.get('d');
+    if(!d) return false;
+    const p=JSON.parse(decodeURIComponent(escape(atob(d))));
+    if(!p.v) return false;
+    applyPayload(p);
+    window.history.replaceState({},'',window.location.pathname);
+    return true;
+  }catch(e){return false;}
+}
+
+// ═══════════════════════════════════════════════════════════
+// CSV EXPORT
+// ═══════════════════════════════════════════════════════════
+function downloadCSV(){
+  const now=new Date();
+  const alloc=parseFloat($('inp-alloc').value)||0;
+  const daysLeft=parseFloat($('inp-days-left').value)||0;
+  let calActual=0,calPlanned=0;
+  for(const k in dayData){calActual+=dayData[k].actual||0;calPlanned+=dayData[k].planned||0;}
+  const trTotal=trEntries.reduce((s,e)=>s+(e.amount||0),0);
+  const grand=calActual+trTotal;
+  const balance=alloc-grand;
+  const perDay=daysLeft>0?balance/daysLeft:0;
+  const q=v=>`"${String(v).replace(/"/g,'""')}"`;
+  const rows=[];
+  rows.push(['BUDGET TRACKER REPORT','','','']);
+  rows.push(['Generated',now.toLocaleString(),'','']);
+  rows.push(['Month',MONTHS[now.getMonth()]+' '+now.getFullYear(),'','']);
+  rows.push(['','','','']);
+  rows.push(['=== SUMMARY ===','','','']);
+  rows.push(['Monthly Allocation',alloc,'','']);
+  rows.push(['Days Left',daysLeft,'','']);
+  rows.push(['Per Day Target',Math.round(perDay),'','']);
+  rows.push(['Calendar Planned',Math.round(calPlanned),'','']);
+  rows.push(['Calendar Actual',Math.round(calActual),'','']);
+  rows.push([tabName()+' Total',Math.round(trTotal),'','']);
+  rows.push(['Grand Total',Math.round(grand),'','']);
+  rows.push(['Balance Remaining',Math.round(balance),'','']);
+  rows.push(['Net Savings',Math.round(alloc-grand),'','']);
+  rows.push(['','','','']);
+  rows.push(['=== DAILY ENTRIES ===','','','']);
+  rows.push(['Date','Planned','Actual','Difference']);
+  const sorted=Object.keys(dayData).sort();
+  if(sorted.length===0) rows.push(['No entries','','','']);
+  else{ sorted.forEach(k=>{const d=dayData[k];rows.push([k,d.planned||0,d.actual||0,(d.actual||0)-(d.planned||0)]);});rows.push(['TOTAL','',Math.round(calActual),'']); }
+  rows.push(['','','','']);
+  rows.push(['=== '+tabName().toUpperCase()+' ===','','','']);
+  rows.push(['Description','Amount','Date','']);
+  if(trEntries.length===0) rows.push(['No entries','','','']);
+  else{ trEntries.forEach(e=>rows.push([e.label||'—',e.amount||0,e.date||'—','']));rows.push(['TOTAL',Math.round(trTotal),'','']); }
+  const csv=rows.map(r=>r.map(c=>q(c)).join(',')).join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`budget-${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}.csv`;
+  a.click();URL.revokeObjectURL(url);
+  toast('CSV downloaded ✓','var(--teal)','rgba(8,145,178,0.3)');
+}
+
+// ═══════════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════════
+function toast(msg,color,border){
+  const t=$('toast');t.textContent=msg;t.style.color=color;t.style.borderColor=border;
+  t.classList.add('show');clearTimeout(window._tt);
+  window._tt=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ═══════════════════════════════════════════════════════════
+// KEYBOARD & OVERLAY CLOSE
+// ═══════════════════════════════════════════════════════════
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){ closeDayModal(); closeShareModal(); }
+  if(e.key==='Enter'&&$('day-modal').classList.contains('open')) saveDay();
+});
+$('day-modal').addEventListener('click',e=>{ if(e.target===$('day-modal')) closeDayModal(); });
+$('share-modal').addEventListener('click',e=>{ if(e.target===$('share-modal')) closeShareModal(); });
+
+// ═══════════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════════
+window.addEventListener('load',()=>{
+  updateDays();
+
+  // Init chart
+  const ctx=$('myChart').getContext('2d');
+  window._chart=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:['Calendar actual','Transport','Balance','Allocation'],
+      datasets:[{label:'LKR',data:[0,0,300000,300000],backgroundColor:['#0d9e6e','#7c3aed','#0891b2','#d1fae5'],borderRadius:6,borderSkipped:false}]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' LKR '+Math.round(c.raw).toLocaleString()},backgroundColor:'#fff',borderColor:'#c8e8da',borderWidth:1,titleColor:'#6b9e88',bodyColor:'#0f2d22',padding:10,cornerRadius:8}},
+      scales:{
+        y:{beginAtZero:true,ticks:{callback:v=>Math.round(v/1000)+'k',color:'#6b9e88',font:{family:'DM Mono',size:11}},grid:{color:'rgba(0,80,50,0.06)'},border:{color:'transparent'}},
+        x:{ticks:{color:'#6b9e88',font:{family:'DM Mono',size:11}},grid:{display:false},border:{color:'transparent'}}
+      }
+    }
+  });
+
+  // Check URL ?d= first
+  const fromURL=checkURLData();
+  if(fromURL){
+    renderCal(); renderTransport(); recalc();
+    saveNow();
+    toast('Data loaded from link ✓','var(--teal)','rgba(8,145,178,0.3)');
+  } else {
+    // Load from Google Sheets (live), fallback to localStorage
+    loadData().then(()=>{ renderCal(); renderTransport(); recalc(); toast('Data loaded ✓','var(--accent)','var(--border)'); });
+  }
+});
+</script>
+</body>
+</html>
